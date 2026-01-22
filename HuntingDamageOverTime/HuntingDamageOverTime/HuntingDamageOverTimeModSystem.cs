@@ -11,7 +11,7 @@ namespace HuntingDamageOverTime
     {
         // Configurable constants
         public const float BLEEDING_DAMAGE_PER_SECOND = 0.5f;
-        public const float BLEEDING_DURATION_SECONDS = 30f;
+        public const float BLEEDING_DURATION_SECONDS = 15f;
 
         public override void Start(ICoreAPI api)
         {
