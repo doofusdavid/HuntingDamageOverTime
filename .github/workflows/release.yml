@@ -24,27 +24,32 @@ jobs:
         mkdir -p $HOME/vintagestory
         cd $HOME/vintagestory
 
-        # Try downloading the archive
-        if wget https://cdn.vintagestory.at/gamefiles/stable/vs_client_linux-x64_1.21.6.tar.gz; then
-          tar -xzf vs_client_linux-x64_1.21.6.tar.gz
-        else
-          echo "Failed to download from CDN, trying alternative..."
-          wget https://github.com/anegostudios/vintagestory/releases/download/v1.21.6/vs_archive_1.21.6.tar.gz
-          tar -xzf vs_archive_1.21.6.tar.gz
-        fi
+        # Download the Linux client
+        wget https://cdn.vintagestory.at/gamefiles/stable/vs_client_linux-x64_1.21.6.tar.gz
+        tar -xzf vs_client_linux-x64_1.21.6.tar.gz
 
         # List contents to debug
         echo "Contents of vintagestory directory:"
-        ls -la
+        ls -laR
 
-        # Set environment variable - the DLLs should be in the current directory or a subdirectory
-        echo "VINTAGE_STORY=$HOME/vintagestory" >> $GITHUB_ENV
+        # Find where VintagestoryAPI.dll actually is
+        API_DLL=$(find . -name "VintagestoryAPI.dll" -print -quit)
+        if [ -n "$API_DLL" ]; then
+          VS_PATH=$(dirname "$API_DLL")
+          echo "Found VintagestoryAPI.dll at: $VS_PATH"
+          echo "VINTAGE_STORY=$HOME/vintagestory/$VS_PATH" >> $GITHUB_ENV
+        else
+          echo "ERROR: VintagestoryAPI.dll not found!"
+          exit 1
+        fi
 
     - name: Verify Vintage Story DLLs
       run: |
-        echo "Checking for required DLLs..."
-        find $HOME/vintagestory -name "VintagestoryAPI.dll" -o -name "VintagestoryLib.dll"
         echo "VINTAGE_STORY is set to: $VINTAGE_STORY"
+        echo "Contents of VINTAGE_STORY directory:"
+        ls -la "$VINTAGE_STORY"
+        echo "Checking for required DLLs..."
+        ls -la "$VINTAGE_STORY"/*.dll | head -20
 
     - name: Build mod with Cake
       run: |
