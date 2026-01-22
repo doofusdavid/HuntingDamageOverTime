@@ -62,23 +62,17 @@ namespace HuntingDamageOverTime
                 return;
             }
 
-            // Debug: Log all damage received
-            string sourceInfo = dmgSource?.Source.ToString() ?? "null";
-            string sourceEntityCode = dmgSource?.SourceEntity?.Code?.Path ?? "null";
-            string damageType = dmgSource?.Type.ToString() ?? "null";
-            entity.Api.Logger.Notification($"[HuntingDamageOverTime] {entity.Code?.Path ?? "unknown"} received {damage} damage. Source: {sourceInfo}, SourceEntity: {sourceEntityCode}, Type: {damageType}");
-
             // Check if damage is from a ranged weapon (arrow or spear)
             if (IsProjectileDamage(dmgSource))
             {
                 // Reset/extend the bleeding duration
                 remainingBleedTime = HuntingDamageOverTimeModSystem.BLEEDING_DURATION_SECONDS;
 
-                entity.Api.Logger.Notification($"[HuntingDamageOverTime] PROJECTILE HIT! {entity.Code?.Path ?? "unknown"} will bleed for {remainingBleedTime}s");
+                entity.Api.Logger.Notification($"[HuntingDamageOverTime] {entity.Code?.Path ?? "unknown"} hit by projectile, bleeding for {remainingBleedTime}s");
             }
         }
 
-        private bool IsProjectileDamage(DamageSource dmgSource)
+        private bool IsProjectileDamage(DamageSource? dmgSource)
         {
             // Check if the damage has a source entity (the projectile)
             // The source can be either Player (player shot it) or Entity (other entity shot it)
@@ -86,13 +80,9 @@ namespace HuntingDamageOverTime
             {
                 // Check if the source entity is an arrow or spear projectile
                 string entityCode = dmgSource.SourceEntity.Code?.Path ?? "";
-                entity.Api.Logger.Notification($"[HuntingDamageOverTime] Checking entity code: '{entityCode}'");
-                bool isProjectile = entityCode.Contains("arrow") || entityCode.Contains("spear");
-                entity.Api.Logger.Notification($"[HuntingDamageOverTime] Is projectile: {isProjectile}");
-                return isProjectile;
+                return entityCode.Contains("arrow") || entityCode.Contains("spear");
             }
 
-            entity.Api.Logger.Notification($"[HuntingDamageOverTime] No source entity found");
             return false;
         }
 
@@ -115,7 +105,6 @@ namespace HuntingDamageOverTime
                 if (timeSinceLastTick >= 1.0f)
                 {
                     float damageToApply = HuntingDamageOverTimeModSystem.BLEEDING_DAMAGE_PER_SECOND;
-                    float healthBefore = entity.WatchedAttributes.GetFloat("health", 0);
 
                     DamageSource bleedDamage = new DamageSource
                     {
@@ -123,13 +112,12 @@ namespace HuntingDamageOverTime
                         Type = EnumDamageType.Injury
                     };
 
-                    bool damageApplied = entity.ReceiveDamage(bleedDamage, damageToApply);
-                    float healthAfter = entity.WatchedAttributes.GetFloat("health", 0);
+                    entity.ReceiveDamage(bleedDamage, damageToApply);
 
                     remainingBleedTime -= timeSinceLastTick;
                     timeSinceLastTick = 0f;
 
-                    entity.Api.Logger.Notification($"[HuntingDamageOverTime] BLEEDING TICK! {entity.Code?.Path ?? "unknown"}: Applied {damageToApply} damage. Health: {healthBefore:F1} -> {healthAfter:F1}. Damage accepted: {damageApplied}. Remaining bleed time: {remainingBleedTime:F1}s");
+                    entity.Api.Logger.Debug($"[HuntingDamageOverTime] {entity.Code?.Path ?? "unknown"} bleeding: {damageToApply} damage, {remainingBleedTime:F1}s remaining");
                 }
             }
         }
