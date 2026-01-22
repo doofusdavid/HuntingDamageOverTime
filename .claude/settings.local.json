@@ -5,7 +5,8 @@
       "Bash(dotnet build:*)",
       "Bash(echo:*)",
       "WebSearch",
-      "WebFetch(domain:wiki.vintagestory.at)"
+      "WebFetch(domain:wiki.vintagestory.at)",
+      "Bash(dotnet run:*)"
     ],
     "deny": [],
     "ask": []

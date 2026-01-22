@@ -1,0 +1,58 @@
+name: Build and Release Mod
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Download Vintage Story
+      run: |
+        # Download the latest stable Vintage Story version
+        wget -q https://cdn.vintagestory.at/gamefiles/stable/vs_archive_1.21.6.tar.gz
+        mkdir -p ~/vintagestory
+        tar -xzf vs_archive_1.21.6.tar.gz -C ~/vintagestory
+        echo "VINTAGE_STORY=$HOME/vintagestory" >> $GITHUB_ENV
+
+    - name: Build mod with Cake
+      run: |
+        cd HuntingDamageOverTime/ZZCakeBuild
+        dotnet run --configuration Release
+
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: HuntingDamageOverTime/Releases/*.zip
+        body: |
+          ## Hunting Damage Over Time v${{ steps.get_version.outputs.VERSION }}
+
+          Adds bleeding damage over time when animals are hit with arrows or spears.
+
+          ### Installation
+          1. Download the zip file below
+          2. Extract to your Vintage Story `Mods` folder
+          3. Restart the server/client
+
+          ### Configuration
+          - Damage per second: 0.5
+          - Duration: 30 seconds
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
