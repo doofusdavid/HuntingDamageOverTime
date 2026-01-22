@@ -20,11 +20,31 @@ jobs:
 
     - name: Download Vintage Story
       run: |
-        # Download the latest stable Vintage Story version
-        wget -q https://cdn.vintagestory.at/gamefiles/stable/vs_archive_1.21.6.tar.gz
-        mkdir -p ~/vintagestory
-        tar -xzf vs_archive_1.21.6.tar.gz -C ~/vintagestory
+        # Download the latest stable Vintage Story version for Linux
+        mkdir -p $HOME/vintagestory
+        cd $HOME/vintagestory
+
+        # Try downloading the archive
+        if wget https://cdn.vintagestory.at/gamefiles/stable/vs_client_linux-x64_1.21.6.tar.gz; then
+          tar -xzf vs_client_linux-x64_1.21.6.tar.gz
+        else
+          echo "Failed to download from CDN, trying alternative..."
+          wget https://github.com/anegostudios/vintagestory/releases/download/v1.21.6/vs_archive_1.21.6.tar.gz
+          tar -xzf vs_archive_1.21.6.tar.gz
+        fi
+
+        # List contents to debug
+        echo "Contents of vintagestory directory:"
+        ls -la
+
+        # Set environment variable - the DLLs should be in the current directory or a subdirectory
         echo "VINTAGE_STORY=$HOME/vintagestory" >> $GITHUB_ENV
+
+    - name: Verify Vintage Story DLLs
+      run: |
+        echo "Checking for required DLLs..."
+        find $HOME/vintagestory -name "VintagestoryAPI.dll" -o -name "VintagestoryLib.dll"
+        echo "VINTAGE_STORY is set to: $VINTAGE_STORY"
 
     - name: Build mod with Cake
       run: |
