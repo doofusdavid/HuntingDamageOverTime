@@ -10,7 +10,7 @@ namespace HuntingDamageOverTime
     public class HuntingDamageOverTimeModSystem : ModSystem
     {
         // Configurable constants
-        public const float BLEEDING_DAMAGE_PER_SECOND = 0.5f;
+        public const float BLEEDING_DAMAGE_PERCENT = 25f;  // Percentage of weapon damage dealt per second
         public const float BLEEDING_DURATION_SECONDS = 15f;
 
         public override void Start(ICoreAPI api)
@@ -45,6 +45,7 @@ namespace HuntingDamageOverTime
     {
         private float remainingBleedTime = 0f;
         private float timeSinceLastTick = 0f;
+        private float bleedDamagePerSecond = 0f;
 
         public EntityBehaviorBleedingDamage(Entity entity) : base(entity)
         {
@@ -65,10 +66,13 @@ namespace HuntingDamageOverTime
             // Check if damage is from a ranged weapon (arrow or spear)
             if (IsProjectileDamage(dmgSource))
             {
+                // Calculate bleed damage as percentage of weapon damage
+                bleedDamagePerSecond = damage * (HuntingDamageOverTimeModSystem.BLEEDING_DAMAGE_PERCENT / 100f);
+
                 // Reset/extend the bleeding duration
                 remainingBleedTime = HuntingDamageOverTimeModSystem.BLEEDING_DURATION_SECONDS;
 
-                entity.Api.Logger.Notification($"[HuntingDamageOverTime] {entity.Code?.Path ?? "unknown"} hit by projectile, bleeding for {remainingBleedTime}s");
+                entity.Api.Logger.Notification($"[HuntingDamageOverTime] {entity.Code?.Path ?? "unknown"} hit by projectile for {damage} damage, bleeding {bleedDamagePerSecond}/s for {remainingBleedTime}s");
             }
         }
 
@@ -104,7 +108,7 @@ namespace HuntingDamageOverTime
                 // Apply damage every second
                 if (timeSinceLastTick >= 1.0f)
                 {
-                    float damageToApply = HuntingDamageOverTimeModSystem.BLEEDING_DAMAGE_PER_SECOND;
+                    float damageToApply = bleedDamagePerSecond;
 
                     DamageSource bleedDamage = new DamageSource
                     {
@@ -128,6 +132,7 @@ namespace HuntingDamageOverTime
 
             // Clear bleeding on death
             remainingBleedTime = 0f;
+            bleedDamagePerSecond = 0f;
         }
 
         public override void ToBytes(bool forClient)
