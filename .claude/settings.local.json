@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:apidocs.vintagestory.at)",
+      "Bash(dotnet build:*)",
+      "Bash(echo:*)",
+      "WebSearch",
+      "WebFetch(domain:wiki.vintagestory.at)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

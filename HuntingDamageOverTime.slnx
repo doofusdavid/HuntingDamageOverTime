@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="HuntingDamageOverTime/HuntingDamageOverTime/HuntingDamageOverTime.csproj" />
+  <Project Path="HuntingDamageOverTime/ZZCakeBuild/CakeBuild.csproj" />
+</Solution>
