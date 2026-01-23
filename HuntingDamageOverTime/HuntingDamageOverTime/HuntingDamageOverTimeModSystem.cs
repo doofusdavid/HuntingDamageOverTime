@@ -10,7 +10,7 @@ namespace HuntingDamageOverTime
     public class HuntingDamageOverTimeModSystem : ModSystem
     {
         // Configurable constants
-        public const float BLEEDING_DAMAGE_PERCENT = 25f;  // Percentage of weapon damage dealt per second
+        public const float BLEEDING_DAMAGE_PERCENT = 50f;  // Percentage of weapon damage dealt per second
         public const float BLEEDING_DURATION_SECONDS = 15f;
 
         public override void Start(ICoreAPI api)
@@ -67,7 +67,7 @@ namespace HuntingDamageOverTime
             if (IsProjectileDamage(dmgSource))
             {
                 // Calculate bleed damage as percentage of weapon damage
-                bleedDamagePerSecond = damage * (HuntingDamageOverTimeModSystem.BLEEDING_DAMAGE_PERCENT / 100f);
+                bleedDamagePerSecond = damage * (HuntingDamageOverTimeModSystem.BLEEDING_DAMAGE_PERCENT / 100f / HuntingDamageOverTimeModSystem.BLEEDING_DURATION_SECONDS);
 
                 // Reset/extend the bleeding duration
                 remainingBleedTime = HuntingDamageOverTimeModSystem.BLEEDING_DURATION_SECONDS;
