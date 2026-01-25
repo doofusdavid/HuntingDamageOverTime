@@ -1,4 +1,5 @@
-﻿using Vintagestory.API.Client;
+﻿using System.Linq;
+using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Config;
@@ -29,14 +30,45 @@ namespace HuntingDamageOverTime
 
             // Hook into entity damage events
             api.Event.OnEntitySpawn += OnEntitySpawn;
+
+            // Add the bleeding behavior to all wildlife animals that have already spawned
+            foreach (var entity in api.World.LoadedEntities)
+            {
+                if (IsWildlifeAnimal(entity.Value))
+                {
+                    AddBleedingBehaviorToEntity(entity.Value);
+                }
+            }
+        }
+
+        private bool IsWildlifeAnimal(Entity entity)
+        {
+            // Exclude players
+            if (entity is EntityPlayer) return false;
+
+            // Exclude hostile mobs
+            string entityCode = entity.Code?.Path.ToLower() ?? "";
+            string[] hostileTypes = { "drifter", "locust", "zombie", "specter", "nightmare", "temp" };
+            if (hostileTypes.Any(hostile => entityCode.Contains(hostile))) return false;
+
+            // Include EntityAgent types (which includes wildlife animals)
+            return entity is EntityAgent;
+        }
+
+        private void AddBleedingBehaviorToEntity(Entity entity)
+        {
+            if (!entity.HasBehavior<EntityBehaviorBleedingDamage>())
+            {
+                entity.AddBehavior(new EntityBehaviorBleedingDamage(entity));
+            }
         }
 
         private void OnEntitySpawn(Entity entity)
         {
-            // Add the bleeding behavior to all entities that can take damage
-            if (!entity.HasBehavior<EntityBehaviorBleedingDamage>())
+            // Add the bleeding behavior to wildlife animals only
+            if (IsWildlifeAnimal(entity))
             {
-                entity.AddBehavior(new EntityBehaviorBleedingDamage(entity));
+                AddBleedingBehaviorToEntity(entity);
             }
         }
     }
