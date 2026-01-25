@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
@@ -140,7 +141,8 @@ namespace HuntingDamageOverTime
                 // Apply damage every second
                 if (timeSinceLastTick >= 1.0f)
                 {
-                    float damageToApply = bleedDamagePerSecond;
+                    // Ensure minimum damage threshold
+                    float damageToApply = Math.Max(0.0001f, bleedDamagePerSecond);
 
                     DamageSource bleedDamage = new DamageSource
                     {
