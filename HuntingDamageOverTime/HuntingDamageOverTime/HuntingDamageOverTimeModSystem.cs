@@ -147,7 +147,8 @@ namespace HuntingDamageOverTime
                     DamageSource bleedDamage = new DamageSource
                     {
                         Source = EnumDamageSource.Internal,
-                        Type = EnumDamageType.Injury
+                        Type = EnumDamageType.Injury,
+                        IgnoreInvFrames = true
                     };
 
                     entity.ReceiveDamage(bleedDamage, damageToApply);

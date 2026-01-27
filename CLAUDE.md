@@ -4,82 +4,81 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Vintage Story mod** written in C# targeting .NET 8.0. Vintage Story is a voxel survival game, and this mod extends its functionality through the VintagestoryAPI.
+This is a **Vintage Story mod** written in C# targeting .NET 8.0. The mod adds bleeding damage over time when animals are hit by projectiles (arrows/spears). It runs server-side only.
+
+## Build Commands
+
+**Environment Setup**: Set the `VINTAGE_STORY` environment variable to your Vintage Story installation directory.
+
+**Build and Package (recommended):**
+```bash
+cd HuntingDamageOverTime/ZZCakeBuild
+dotnet run                              # Release build + package
+dotnet run --configuration Debug        # Debug build + package
+dotnet run -- --skip-json-validation    # Skip JSON validation
+```
+
+**Direct build:**
+```bash
+cd HuntingDamageOverTime/HuntingDamageOverTime
+dotnet build -c Release
+dotnet publish -c Release
+```
+
+**Output locations:**
+- Build: `HuntingDamageOverTime/bin/{Configuration}/Mods/mod/`
+- Package: `Releases/{modid}_{version}.zip`
+
+## Running/Debugging
+
+Launch profiles are configured in `Properties/launchSettings.json`:
+- **Client**: Runs game client with mod loaded via `--addModPath`
+- **Server**: Runs dedicated server with mod loaded
+
+Both require the `VINTAGE_STORY` environment variable.
 
 ## Architecture
 
-### Project Structure
-- **HuntingDamageOverTime/HuntingDamageOverTime/** - Main mod project containing:
-  - `HuntingDamageOverTimeModSystem.cs` - Main mod entry point inheriting from `ModSystem`
-  - `modinfo.json` - Mod metadata (version, dependencies, mod ID)
-  - `assets/` - Game assets including localization files
-- **HuntingDamageOverTime/ZZCakeBuild/** - Cake build automation project using Cake.Frosting
+### Core Classes (HuntingDamageOverTimeModSystem.cs)
 
-### Key Architecture Points
-- **ModSystem Pattern**: The main class inherits from `Vintagestory.API.Common.ModSystem` which provides lifecycle hooks
-- **Side Awareness**: Vintage Story has server-side and client-side execution contexts:
-  - `Start(ICoreAPI)` - Called on both sides
-  - `StartServerSide(ICoreServerAPI)` - Server-only initialization
-  - `StartClientSide(ICoreClientAPI)` - Client-only initialization
-- **DLL References**: The mod references external Vintage Story DLLs via the `VINTAGE_STORY` environment variable pointing to the game installation
+**HuntingDamageOverTimeModSystem** (ModSystem)
+- Registers `EntityBehaviorBleedingDamage` behavior class
+- Hooks `OnEntitySpawn` to add bleeding behavior to wildlife
+- Also applies to already-spawned entities in `StartServerSide`
+- Filters entities: includes `EntityAgent`, excludes players and hostile mobs (drifter, locust, zombie, specter, nightmare, temp)
 
-## Build System
+**EntityBehaviorBleedingDamage** (EntityBehavior)
+- Detects projectile hits in `OnEntityReceiveDamage` (checks for "arrow" or "spear" in source entity code)
+- Calculates bleed damage as percentage of initial hit damage spread over duration
+- Applies damage every second in `OnGameTick`
+- Clears state on entity death
 
-### Environment Setup
-Set the `VINTAGE_STORY` environment variable to your Vintage Story installation directory (containing VintagestoryAPI.dll).
-
-### Build Commands
-
-**Using Cake build automation (recommended):**
-```bash
-# From ZZCakeBuild directory
-dotnet run --configuration Release  # Full build, validate, package
-dotnet run --configuration Debug    # Debug build
-dotnet run -- --skip-json-validation  # Skip asset JSON validation
+**Configurable constants:**
+```csharp
+BLEEDING_DAMAGE_PERCENT = 50f   // % of weapon damage dealt as total bleed
+BLEEDING_DURATION_SECONDS = 15f // Duration of bleed effect
 ```
 
-**Using dotnet directly:**
-```bash
-# From HuntingDamageOverTime/HuntingDamageOverTime directory
-dotnet build HuntingDamageOverTime.csproj -c Release
-dotnet build HuntingDamageOverTime.csproj -c Debug
-dotnet clean HuntingDamageOverTime.csproj
-dotnet publish HuntingDamageOverTime.csproj -c Release
-```
+### Vintage Story API Patterns
 
-### Build Process
-The Cake build system performs these tasks in order:
-1. **ValidateJson** - Validates all JSON files in `assets/` directory
-2. **Build** - Cleans and publishes the mod
-3. **Package** - Creates distributable mod package:
-   - Copies published DLL from `bin/{Configuration}/Mods/mod/publish/`
-   - Copies `assets/`, `modinfo.json`, and `modicon.png` (if exists)
-   - Creates ZIP file in `Releases/` directory named `{modid}_{version}.zip`
-
-### Output Locations
-- Build output: `HuntingDamageOverTime/bin/{Configuration}/Mods/mod/`
-- Packaged release: `Releases/{modid}_{version}.zip`
+- **Side awareness**: Check `entity.World.Side == EnumAppSide.Server` before server-only logic
+- **ModSystem lifecycle**: `Start()` for both sides, `StartServerSide()`/`StartClientSide()` for side-specific
+- **Entity behaviors**: Register with `api.RegisterEntityBehaviorClass()`, add dynamically with `entity.AddBehavior()`
 
 ## Mod Metadata
 
-Mod configuration is in `modinfo.json`:
-- `modid` - Unique identifier (used for asset paths and namespaces)
-- `version` - Semantic version (used in package filename)
-- `dependencies.game` - Minimum required Vintage Story version
+`modinfo.json` contains:
+- `modid`: Used for asset paths and namespaces
+- `version`: Used in package filename and release tags
+- `dependencies.game`: Minimum Vintage Story version
 
-## Asset Structure
+## Release Process
 
-Assets follow Vintage Story's domain-based path structure:
-- Path format: `assets/{modid}/{type}/...`
-- Localization: `assets/{modid}/lang/{languagecode}.json`
+GitHub Actions workflow (`.github/workflows/release.yml`) triggers on version tags (`v*.*.*`):
+1. Downloads Vintage Story
+2. Builds with Cake
+3. Creates GitHub release with packaged ZIP
 
-## API Documentation
+## API Reference
 
-**Primary Reference**: https://apidocs.vintagestory.at/
-
-The Vintage Story API is organized into three main namespaces:
-- **Vintagestory.API.Client** (`ICoreClientAPI`) - Client-side functionality (rendering, UI, input)
-- **Vintagestory.API.Common** (`ICoreAPI`) - Shared utilities and systems (blocks, items, entities, world access)
-- **Vintagestory.API.Server** (`ICoreServerAPI`) - Server-side logic (world generation, game rules, persistence)
-
-Note: The API docs serve as a reference only, not a tutorial. For learning, consult the Official Vintage Story Wiki.
+https://apidocs.vintagestory.at/
