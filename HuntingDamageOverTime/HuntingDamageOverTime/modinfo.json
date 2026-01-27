@@ -8,7 +8,7 @@
         "Unknown"
     ],
     "description": "Makes hunting more realistic by adding bleeding damage over time when animals are hit with arrows or spears. Animals will take 0.5 damage per second for 30 seconds after being hit.",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "dependencies": {
         "game": "1.21.0"
     }

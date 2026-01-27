@@ -10,7 +10,7 @@ namespace HuntingDamageOverTime
     public class HuntingDamageOverTimeModSystem : ModSystem
     {
         // Configurable constants
-        public const float BLEEDING_DAMAGE_PERCENT = 50f;  // Percentage of weapon damage dealt as total bleed
+        public const float BLEEDING_DAMAGE_PERCENT = 75f;  // Percentage of weapon damage dealt as total bleed
         public const float BLEEDING_DURATION_SECONDS = 15f;
 
         private static ICoreServerAPI? serverApi;
